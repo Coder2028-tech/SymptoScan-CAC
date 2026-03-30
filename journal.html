@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="../static/Images/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SymptoScan | Symptoms Journal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full bg-gray-50 flex flex-col min-h-screen font-sans">
+
+  <!-- Top Navigation -->
+  <!-- Top Navigation -->
+<nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+  <div class="max-w-4xl mx-auto flex items-center justify-between px-4 py-3">
+    <img src="{{ url_for('static', filename='Images/favicon.png') }}" alt="logo" class="w-[150px] h-[150px] rounded-full">
+    <h1 class="text-2xl font-semibold text-green-700">SymptoScan: Symptoms Journal</h1>
+    <div class="space-x-3 flex items-center">
+      <a href="{{ url_for('index') }}"
+         class="inline-block px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+        Home
+      </a>
+      <div>
+        &nbsp;&nbsp;&nbsp;&nbsp;Logged in as <span class="font-semibold">{{ session['username'] }}</span>
+        <a href="{{ url_for('logout') }}" class="ml-4 text-red-600 hover:underline font-medium">Logout</a>
+      </div>
+    </div>
+
+    <div>
+      <!-- Emergency Services Button -->
+      <button onclick="openEmergencyModal()"
+         class="inline-block px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+        Emergency Services
+      </button>
+    </div>
+  </div>
+</nav>
+
+
+  <main class="flex-grow max-w-4xl mx-auto w-full px-6 py-8">
+
+    <!-- Log Symptoms Section -->
+    <section class="mb-10 bg-white rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-semibold mb-6 border-b border-green-300 pb-2">Log Symptoms</h2>
+      <form id="log-form" class="flex flex-col gap-5">
+        <input id="symptom-input" type="text" placeholder="Enter symptoms separated by commas" required
+          class="border border-gray-300 rounded-lg p-4 text-lg focus:outline-none focus:ring-4 focus:ring-green-400" />
+
+        <!-- Discomfort Slider -->
+        <div class="w-full">
+          <label for="discomfort" class="block mb-2 font-medium text-gray-700">Discomfort Level (1 = minimal, 10 = extreme)</label>
+          <input id="discomfort" type="range" min="1" max="10" value="5" step="1"
+            class="w-full accent-green-600 cursor-pointer">
+          <div class="flex justify-between text-sm text-gray-600">
+            <span>1</span>
+            <span id="discomfort-value" class="font-semibold text-green-700">5</span>
+            <span>10</span>
+          </div>
+        </div>
+
+        <button type="submit"
+          class="bg-green-700 hover:bg-green-800 text-white rounded-lg px-8 py-3 font-semibold transition focus:outline-none focus:ring-4 focus:ring-green-600">
+          Add Entry
+        </button>
+      </form>
+    </section>
+
+    <!-- Previous Entries Section -->
+    <section class="bg-white rounded-lg shadow-lg p-8">
+      <h2 class="text-2xl font-semibold mb-6 border-b border-green-300 pb-2">Previous Entries</h2>
+      <div id="journal-entries" class="space-y-6 max-h-[420px] overflow-y-auto">
+        <p class="text-gray-500 text-center text-lg">Loading entries...</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Emergency Modal -->
+  <div id="emergency-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+      <h3 class="text-xl font-bold text-red-700 mb-4">Emergency Services</h3>
+      <p class="mb-4 text-gray-700">If you are in immediate danger, please call 911 right away. Other options:</p>
+      <ul class="space-y-3">
+        <li><a href="tel:911" class="block bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-center">📞 Call 911</a></li>
+        <li><a href="sms:988" class="block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-center">📱 Text 988 (Crisis Line)</a></li>
+        <li><a href="mailto:emergency@example.com" class="block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-center">✉️ Email Emergency Contact</a></li>
+        <li><a href="https://www.google.com/maps/search/hospital+near+me" target="_blank" class="block bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-md text-center">🌐 Find Nearby Hospital</a></li>
+      </ul>
+      <button id="close-modal" class="absolute top-3 right-3 text-gray-500 hover:text-black text-xl font-bold">&times;</button>
+    </div>
+  </div>
+
+  <footer class="bg-gray-100 p-4 text-center text-gray-600 text-sm">
+    Powered by SymptoScan
+  </footer>
+
+  <script>
+    const form = document.getElementById('log-form');
+    const input = document.getElementById('symptom-input');
+    const discomfortSlider = document.getElementById('discomfort');
+    const discomfortValue = document.getElementById('discomfort-value');
+    const entriesDiv = document.getElementById('journal-entries');
+
+    const emergencyModal = document.getElementById('emergency-modal');
+    const closeModalBtn = document.getElementById('close-modal');
+
+    // Update slider label live
+    discomfortSlider.addEventListener('input', () => {
+      discomfortValue.textContent = discomfortSlider.value;
+    });
+
+    // Open emergency modal
+    function openEmergencyModal() {
+      emergencyModal.classList.remove('hidden');
+    }
+
+    // Close modal
+    closeModalBtn.addEventListener('click', () => {
+      emergencyModal.classList.add('hidden');
+    });
+
+    // Fetch all entries
+    async function fetchJournal() {
+      entriesDiv.innerHTML = '<p class="text-gray-500 text-center text-lg">Loading entries...</p>';
+
+      try {
+        const response = await fetch('/journal');
+        const entries = await response.json();
+
+        if (entries.length === 0) {
+          entriesDiv.innerHTML = '<p class="text-gray-500 text-center text-lg">No journal entries yet.</p>';
+          return;
+        }
+
+        entriesDiv.innerHTML = '';
+        entries.slice().reverse().forEach(entry => {
+          const date = new Date(entry.timestamp);
+          const dateStr = date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+          const symptoms = Array.isArray(entry.symptoms) ? entry.symptoms.join(', ') : entry.symptoms;
+
+          const entryEl = document.createElement('article');
+          entryEl.className = 'bg-green-50 rounded-lg p-4 shadow-sm border border-green-200 hover:shadow-md transition mb-3';
+          entryEl.dataset.id = entry.id;
+
+          entryEl.innerHTML = `
+            <time datetime="${entry.timestamp}" class="block text-green-700 text-sm font-medium mb-2">${dateStr}</time>
+            <p class="text-gray-900 text-lg">${symptoms}</p>
+            <p class="mt-2 text-gray-800">Discomfort Level: <span>${entry.discomfort || 'N/A'}</span>/10</p>
+            <button class="delete-btn mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm">Delete</button>
+            ${
+              entry.discomfort >= 8
+                ? `<button class="ml-3 bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded-md text-sm font-semibold emergency-btn">Emergency Services</button>`
+                : ''
+            }
+          `;
+
+          // Delete button
+          entryEl.querySelector('.delete-btn').addEventListener('click', async () => {
+            const confirmed = confirm('Are you sure you want to delete this entry?');
+            if (!confirmed) return;
+
+            const entryId = entryEl.dataset.id;
+            const deleteResp = await fetch(`/journal/delete/${entryId}`, { method: 'DELETE' });
+            const result = await deleteResp.json();
+
+            if (result.success) {
+              fetchJournal();
+            } else {
+              alert(result.error || 'Failed to delete entry.');
+            }
+          });
+
+          // Emergency button
+          const emergencyBtn = entryEl.querySelector('.emergency-btn');
+          if (emergencyBtn) {
+            emergencyBtn.addEventListener('click', openEmergencyModal);
+          }
+
+          entriesDiv.appendChild(entryEl);
+        });
+      } catch (error) {
+        entriesDiv.innerHTML = '<p class="text-red-600 text-center text-lg">Failed to load journal entries.</p>';
+        console.error(error);
+      }
+    }
+
+    // Add new entry
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const symptomsText = input.value.trim();
+      if (!symptomsText) return;
+
+      const symptomsArray = symptomsText.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      const discomfort = parseInt(discomfortSlider.value);
+
+      try {
+        const response = await fetch('/journal/add', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ symptoms: symptomsArray, discomfort })
+        });
+        const result = await response.json();
+        if (result.success) {
+          input.value = '';
+          discomfortSlider.value = 5;
+          discomfortValue.textContent = "5";
+          fetchJournal();
+        } else {
+          alert(result.error || "Failed to add entry");
+        }
+      } catch (error) {
+        alert("Failed to add entry");
+        console.error(error);
+      }
+    });
+
+    // Load entries on page load
+    document.addEventListener('DOMContentLoaded', fetchJournal);
+  </script>
+
+</body>
+</html>

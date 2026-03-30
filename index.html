@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='Images/favicon.png') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SymptoScan | Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-lg">
+    <h1 class="text-3xl font-semibold text-center text-green-700 mb-6 flex items-center justify-center gap-3">
+      <img src="{{ url_for('static', filename='Images/favicon.png') }}" alt="logo" class="w-[150px] h-[150px] rounded-full">
+      Welcome to SymptoScan
+      <img src="{{ url_for('static', filename='Images/favicon.png') }}" alt="logo" class="w-[150px] h-[150px] rounded-full">
+    </h1>
+    <p class="text-center text-gray-600 mb-8">Upload your image OR take a photo, and our program will analyze visible symptoms and provide insights.</p>
+
+    <!-- Updated form to include camera -->
+    <form id="analyzeForm" action="/analyze" method="POST" enctype="multipart/form-data" class="space-y-6">
+      <!-- Upload input -->
+      <div>
+        <label for="imageUpload" class="block text-sm font-medium text-gray-700 mb-2">Upload Image</label>
+        <input type="file" name="image" id="imageUpload" accept="image/*"
+               class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700" />
+      </div>
+
+      <!-- Open Camera Button -->
+      <div>
+        <button type="button" onclick="startCamera()"
+                class="bg-green-600 text-white font-semibold text-sm px-2.5 py-2 rounded-lg hover:bg-green-700">
+          Open Camera
+        </button>
+
+        <!-- Camera & Capture -->
+        <div id="camera" class="hidden mt-3">
+          <div class="w-full h-64 bg-gray-200 flex items-center justify-center rounded-lg overflow-hidden">
+            <video id="video" autoplay playsinline class="rounded-lg transform -scale-x-100 w-full h-full object-cover"></video>
+          </div>
+
+          <button type="button" onclick="takePhoto()"
+                  class="mt-2 w-full bg-green-700 text-white py-2 rounded-lg hover:bg-green-800">
+            Capture Photo
+          </button>
+        </div>
+
+        <!-- Preview -->
+        <div class="w-full h-64 mt-2 bg-white-200 flex items-center justify-center rounded-lg overflow-hidden">
+          <canvas id="canvas" class="hidden w-full h-full object-cover">Preview</canvas>
+        </div>
+
+        <input type="hidden" name="capturedImage" id="capturedImage" />
+
+
+      <!-- Submit -->
+      <button type="submit"
+              class="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-3 rounded-lg transition duration-300">
+        Analyze Image
+      </button>
+    </form>
+
+    <!-- Link to journal -->
+    <div class="text-center mt-6">
+      <a href="{{ url_for('journal_page') }}" class="text-green-700 hover:underline font-medium">
+        View Symptoms Journal
+      </a>
+    </div>
+  </div>
+
+  <!-- JS Functionality -->
+  <script>
+    let videoEl = null;
+
+    // Start camera
+    function startCamera() {
+      const cameraDiv = document.getElementById("camera");
+      cameraDiv.classList.remove("hidden");
+      videoEl = document.getElementById("video");
+
+      navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+        videoEl.srcObject = stream;
+        videoEl.play();
+      }).catch(err => {
+        console.error("Error accessing webcam:", err);
+        alert("Could not access camera. Please check your permissions.");
+      });
+    }
+
+    // Capture photo
+    function takePhoto() {
+      const canvas = document.getElementById("canvas");
+      const context = canvas.getContext("2d");
+      canvas.width = videoEl.videoWidth * 0.81;
+      canvas.height = videoEl.videoHeight * 0.81;
+      context.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+      // Show preview
+      canvas.classList.remove("hidden");
+
+      // Convert to Base64
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.6);
+      document.getElementById("capturedImage").value = dataUrl;
+    }
+
+    // Ensure either upload or camera photo is provided
+    document.getElementById("analyzeForm").addEventListener("submit", function(e) {
+      const fileInput = document.getElementById("imageUpload");
+      const captured = document.getElementById("capturedImage").value;
+
+      if (!fileInput.files.length && !captured) {
+        e.preventDefault();
+        alert("Please upload an image or take a photo before submitting.");
+      }
+
+      // Stop camera after submit
+      if (videoEl && videoEl.srcObject) {
+        videoEl.srcObject.getTracks().forEach(track => track.stop());
+      }
+    });
+  </script>
+</body>
+</html>

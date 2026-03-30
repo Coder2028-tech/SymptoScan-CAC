@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="../static/Images/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SymptoScan | Analysis Results</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+  .typing-text {
+    white-space: pre-wrap;
+  }
+</style>
+
+</head>
+<body class="h-full bg-gray-50 p-8 flex flex-col min-h-screen">
+
+  <main class="max-w-4xl mx-auto flex-grow flex flex-col">
+    <h1 class="text-4xl font-extrabold text-green-700 mb-8 text-center tracking-tight">Analysis Results</h1>
+
+    {% if file %}
+    <div class="mb-10 flex justify-center">
+      <img src="{{ url_for('static', filename=file) }}" alt="Analyzed Image"
+           class="max-w-md w-full rounded-xl shadow-xl border border-gray-200" />
+    </div>
+    {% endif %}
+
+    <section class="bg-white rounded-lg shadow-lg p-8 max-w-3xl mx-auto mb-10">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-6 border-b border-green-300 pb-2">Detected Symptoms</h2>
+
+      {% if symptoms and symptoms|length > 0 %}
+      <ul role="list" class="space-y-5 text-gray-700">
+        {% for i in range(symptoms|length) %}
+        <li class="flex flex-col md:flex-row md:justify-between md:items-center bg-green-50 p-4 rounded-lg border border-green-200 shadow-sm">
+          <span class="font-semibold text-green-800 md:w-1/3">Symptom:</span>
+          <span class="md:w-2/3">{{ symptoms[i] }}</span>
+          <span class="font-semibold text-green-800 md:w-1/3 mt-3 md:mt-0">Suggested Treatment:&nbsp;&nbsp;</span>
+          <span class="md:w-2/3">{{ treatments[i] }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="text-green-700 font-semibold text-center text-lg py-6">Healthy, no symptoms detected.</p>
+      {% endif %}
+
+      <!-- Professional Help Section -->
+      <div class="mt-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">Want Professional Help?</h2>
+
+        <div class="space-y-6">
+          <!-- Telehealth Providers -->
+          <div>
+            <h3 class="font-semibold text-green-800 mb-2">Telehealth Providers</h3>
+            <ul class="list-disc list-inside space-y-1 text-gray-700">
+              <li><a href="https://www.teladoc.com/" target="_blank" class="text-blue-600 hover:underline">Teladoc</a></li>
+              <li><a href="https://www.amwell.com/" target="_blank" class="text-blue-600 hover:underline">Amwell</a></li>
+              <li><a href="https://www.doctorondemand.com/" target="_blank" class="text-blue-600 hover:underline">Doctor on Demand</a></li>
+            </ul>
+          </div>
+
+          <!-- Hospitals -->
+          <div>
+            <h3 class="font-semibold text-green-800 mb-2">Look For Hospitals Near You</h3>
+            <ul class="list-disc list-inside space-y-1 text-gray-700">
+              <li><a href="https://www.google.com/maps/search/hospitals+near+me" target="_blank" class="text-blue-600 hover:underline">Search Hospitals on Google Maps</a></li>
+            </ul>
+          </div>
+
+          <!-- Clinics -->
+          <div>
+            <h3 class="font-semibold text-green-800 mb-2">Look For Medical Clinics Near You</h3>
+            <ul class="list-disc list-inside space-y-1 text-gray-700">
+              <li><a href="https://www.google.com/maps/search/medical+clinics+near+me" target="_blank" class="text-blue-600 hover:underline">Search Clinics on Google Maps</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="flex justify-center space-x-6">
+      <a href="{{ url_for('index') }}"
+         class="inline-block bg-green-700 hover:bg-green-800 text-white font-semibold px-8 py-3 rounded-lg shadow transition focus:outline-none focus:ring-4 focus:ring-green-400">
+        Analyze Another Image
+      </a>
+      <a href="{{ url_for('journal_page') }}"
+         class="inline-block bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg shadow transition focus:outline-none focus:ring-4 focus:ring-green-400">
+        View Symptoms Journal
+      </a>
+    </div>
+  </main>
+
+  <!-- Floating Chatbot Section -->
+  <aside
+    class="fixed top-6 right-6 w-80 bg-white p-5 rounded-2xl shadow-2xl z-50 flex flex-col"
+    role="complementary" aria-label="Chatbot">
+
+    <h2 class="text-lg font-semibold mb-3 text-green-700">Ask Iris about your symptoms:</h2>
+
+    <div id="chat-box"
+         class="border border-green-200 rounded-lg p-3 h-48 overflow-y-auto text-sm text-gray-700 mb-4 bg-green-50 flex-grow"
+         aria-live="polite" aria-atomic="true">
+    </div>
+
+    <form id="chat-form" class="flex" onsubmit="sendMessage(event)" aria-label="Chat input form">
+      <input type="text" id="chat-input" placeholder="Ask Iris..."
+             class="flex-grow p-2 border border-green-300 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+             aria-required="true" autocomplete="off" />
+      <button type="submit"
+              class="bg-green-700 text-white px-4 rounded-r-lg hover:bg-green-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-green-400">
+        Send
+      </button>
+    </form>
+  </aside>
+
+  <script>
+    function typeMessage(container, message, delay = 40, callback) {
+      let index = 0;
+      const typingDiv = document.createElement('div');
+      typingDiv.innerHTML = `<strong>Iris:</strong> <span class="typing-text"></span>`;
+      container.appendChild(typingDiv);
+
+      const typingSpan = typingDiv.querySelector('.typing-text');
+
+      function typeNextChar() {
+        if (index < message.length) {
+          typingSpan.textContent += message.charAt(index);
+          index++;
+          setTimeout(typeNextChar, delay);
+        } else {
+          if (callback) callback();
+        }
+      }
+
+      typeNextChar();
+    }
+
+    function greetUser() {
+      const chatBox = document.getElementById("chat-box");
+
+      // Show "Iris is typing..." indicator
+      const typingIndicator = document.createElement('div');
+      typingIndicator.textContent = "Iris is typing...";
+      typingIndicator.className = "italic text-gray-500 mb-2";
+      chatBox.appendChild(typingIndicator);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // After short delay, remove typing indicator and show typed message
+      setTimeout(() => {
+        chatBox.removeChild(typingIndicator);
+        typeMessage(chatBox, "Hi! I'm Iris, your helpful medical insight assistant. Feel free to ask me anything about your detected symptoms.");
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 1200);
+    }
+
+    window.addEventListener('DOMContentLoaded', greetUser);
+
+    function typeMessage(container, message, delay = 40, callback) {
+  let index = 0;
+  const typingDiv = document.createElement('div');
+  typingDiv.innerHTML = `<strong>Iris:</strong> <span class="typing-text"></span>`;
+  container.appendChild(typingDiv);
+
+  const typingSpan = typingDiv.querySelector('.typing-text');
+
+  function typeNextChar() {
+    if (index < message.length) {
+      typingSpan.textContent += message.charAt(index);
+      index++;
+      setTimeout(typeNextChar, delay);
+    } else {
+      if (callback) callback();
+    }
+  }
+
+  typeNextChar();
+}
+
+async function sendMessage(event) {
+  event.preventDefault();
+  const input = document.getElementById("chat-input");
+  const chatBox = document.getElementById("chat-box");
+  const userMessage = input.value.trim();
+  if (!userMessage) return;
+
+  // Add user message instantly
+  chatBox.innerHTML += `<div><strong>You:</strong> ${userMessage}</div>`;
+
+  // Add typing indicator
+  const typingIndicator = document.createElement('div');
+  typingIndicator.textContent = "Iris is typing...";
+  typingIndicator.className = "italic text-gray-500 mb-2";
+  chatBox.appendChild(typingIndicator);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  input.value = "";
+  input.disabled = true;
+
+  try {
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ message: userMessage })
+    });
+    const data = await response.json();
+
+    // Remove typing indicator
+    chatBox.removeChild(typingIndicator);
+
+    // Type out Iris's reply
+    typeMessage(chatBox, data.reply, 40, () => {
+      input.disabled = false;
+      input.focus();
+    });
+  } catch (error) {
+    chatBox.removeChild(typingIndicator);
+    chatBox.innerHTML += `<div class="text-red-600"><strong>Error:</strong> Failed to get response.</div>`;
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+  </script>
+
+</body>
+</html>
